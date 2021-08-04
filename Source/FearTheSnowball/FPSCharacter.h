@@ -11,6 +11,13 @@ class FEARTHESNOWBALL_API AFPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	USceneComponent* ProjectileSpawn;
+
+	// Class of projectile to spawn
+	UPROPERTY(EditDefaultsOnly, Category = Projectile)
+	TSubclassOf<class AProjectile> ProjectileClass;
+
 public:
 	// Sets default values for this character's properties
 	AFPSCharacter();
@@ -23,9 +30,6 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	// Move character along forward vector
 	void MoveForward(float Val);
 
@@ -33,6 +37,7 @@ public:
 	void MoveRight(float Val);
 
 	// Fire the projectile
+	UFUNCTION(Server, Reliable)
 	void Fire();
 
 	// Horizontal rotation

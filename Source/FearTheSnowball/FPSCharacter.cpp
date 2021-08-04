@@ -2,13 +2,17 @@
 
 
 #include "FPSCharacter.h"
+#include "Projectile.h"
+#include "Components/CapsuleComponent.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
+	ProjectileSpawn = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawn"));
+	ProjectileSpawn->SetupAttachment(RootComponent);
+	ProjectileSpawn->SetRelativeLocation(FVector(120.f, 0.f, 50.f));
 }
 
 // Called when the game starts or when spawned
@@ -25,13 +29,6 @@ void AFPSCharacter::Tick(float DeltaTime)
 
 }
 
-// Called to bind functionality to input
-void AFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
-}
-
 void AFPSCharacter::MoveForward(float Val)
 {
 	AddMovementInput(GetActorForwardVector(), Val);
@@ -42,9 +39,20 @@ void AFPSCharacter::MoveRight(float Val)
 	AddMovementInput(GetActorRightVector(), Val);
 }
 
-void AFPSCharacter::Fire()
+void AFPSCharacter::Fire_Implementation()
 {
+	const FRotator SpawnRotation = GetControlRotation();
+	// SpawnLocation is in camera space, so transform it to world space before offsetting from the character location to find the final spawn position
+	const FVector SpawnLocation = ((ProjectileSpawn != nullptr) ? ProjectileSpawn->GetComponentLocation() : GetActorLocation());
 
+	// Set Spawn Collision Handling Override
+	FActorSpawnParameters ActorSpawnParams;
+	ActorSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+	ActorSpawnParams.Owner = this;
+	ActorSpawnParams.Instigator = GetInstigator();
+
+	// spawn the projectile at the muzzle
+	GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
 }
 
 void AFPSCharacter::Turn(float Val)
