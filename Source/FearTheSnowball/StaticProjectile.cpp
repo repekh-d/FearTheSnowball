@@ -1,25 +1,21 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Projectile.h"
+#include "StaticProjectile.h"
 #include "Components/SphereComponent.h"
-#include "GameFramework/ProjectileMovementComponent.h"
 #include "UObject/ConstructorHelpers.h"
 #include "FPSCharacter.h"
 
 // Sets default values
-AProjectile::AProjectile()
+AStaticProjectile::AStaticProjectile()
 {
 	SetReplicates(true);
 
 	// Use a sphere as a simple collision representation
 	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("SphereComp"));
 	CollisionComp->InitSphereRadius(20.0f);
-	CollisionComp->BodyInstance.SetCollisionProfileName("BlockAllDynamic");
-
-	// Players can't walk on it
-	CollisionComp->SetWalkableSlopeOverride(FWalkableSlopeOverride(WalkableSlope_Unwalkable, 0.f));
-	CollisionComp->CanCharacterStepUpOn = ECB_No;
+	CollisionComp->BodyInstance.SetCollisionProfileName("OverlapAllDynamic");
+	CollisionComp->SetGenerateOverlapEvents(true);
 
 	// Set as root component
 	RootComponent = CollisionComp;
@@ -37,41 +33,38 @@ AProjectile::AProjectile()
 		StaticMesh->SetRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
 	}
 
-	// Use a ProjectileMovementComponent to govern this projectile's movement
-	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileComp"));
-	ProjectileMovement->SetUpdatedComponent(CollisionComp);
-	ProjectileMovement->InitialSpeed = 3000.f;
-	ProjectileMovement->MaxSpeed = 3000.f;
-	ProjectileMovement->bRotationFollowsVelocity = true;
-	ProjectileMovement->bShouldBounce = true;
-
-	// Die after 3 seconds by default
-	InitialLifeSpan = 3.0f;
+	AmmoCount = 5;
 }
 
 // Called when the game starts or when spawned
-void AProjectile::BeginPlay()
+void AStaticProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	CollisionComp->OnComponentHit.AddDynamic(this, &AProjectile::OnHit);
-}
 
-void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
+	CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &AStaticProjectile::OnBeginOverlap);
+}
+#define PRINT(...) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(__VA_ARGS__));
+void AStaticProjectile::OnBeginOverlap(
+	UPrimitiveComponent* OverlappedComponent,
+	AActor* OtherActor,
+	UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex,
+	bool bFromSweep,
+	const FHitResult& SweepResult)
 {
 	// Execute only on server
 	if (GetLocalRole() != ROLE_Authority)
 		return;
-	AFPSCharacter* Character;
-	// Only add impulse and destroy projectile if we hit a character
+
 	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
 	{
-		Character = Cast<AFPSCharacter>(OtherActor);
+		AFPSCharacter* Character = Cast<AFPSCharacter>(OtherActor);
 		if (Character)
 		{
-			Character->LaunchCharacter(GetVelocity(), false, false);
+			Character->AddAmmo(AmmoCount);
 			Destroy();
 		}
 	}
 }
+
 

@@ -11,24 +11,31 @@ class FEARTHESNOWBALL_API AFPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+	// Projectiles spawn position
+	UPROPERTY(VisibleDefaultsOnly, Category = Components)
 	USceneComponent* ProjectileSpawn;
 
 	// Class of projectile to spawn
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AProjectile> ProjectileClass;
 
+protected:
+	// Amount of posessed ammo
+	UPROPERTY(ReplicatedUsing = OnRep_AmmoCount)
+	int32 AmmoCount;
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
+	// AmmoCount replication callback
+	UFUNCTION()
+	void OnRep_AmmoCount();
+
 public:
 	// Sets default values for this character's properties
 	AFPSCharacter();
 
-protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
-
-public:	
-	// Called every frame
-	virtual void Tick(float DeltaTime) override;
+	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	// Move character along forward vector
 	void MoveForward(float Val);
@@ -45,4 +52,12 @@ public:
 
 	// Vertical rotation
 	void LookUp(float Val);
+
+	// AmmoCount setter
+	UFUNCTION(BlueprintCallable)
+	void SetAmmoCount(int32 NewAmmoCount);
+
+	// AmmoCount setter
+	UFUNCTION(BlueprintCallable)
+	void AddAmmo(int32 Count);
 };

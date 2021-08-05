@@ -15,6 +15,14 @@ class FEARTHESNOWBALL_API AFloor : public AActor
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
 	class UStaticMeshComponent* StaticMesh;
 
+	// Ammunition spawner
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components", meta = (AllowPrivateAccess = "true"))
+	class UAmmoSpawnerComponent* AmmoSpawner;
+
+	// Class of the Ammo Spawner
+	UPROPERTY(EditDefaultsOnly)
+	TSubclassOf<class UAmmoSpawnerComponent> AmmoSpawnerClass;
+
 protected:
 	// x/y scale of the floor
 	UPROPERTY(ReplicatedUsing = OnRep_CurrentAreaSize)
@@ -35,6 +43,7 @@ public:
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
+	// Sets the x/y scale of the underlying static mesh
 	UFUNCTION(BlueprintCallable)
 	void SetCurrentAreaSize(float AreaSize);
 
