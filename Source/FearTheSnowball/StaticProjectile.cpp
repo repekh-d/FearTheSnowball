@@ -43,7 +43,7 @@ void AStaticProjectile::BeginPlay()
 
 	CollisionComp->OnComponentBeginOverlap.AddDynamic(this, &AStaticProjectile::OnBeginOverlap);
 }
-#define PRINT(...) GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Yellow, FString::Printf(__VA_ARGS__));
+
 void AStaticProjectile::OnBeginOverlap(
 	UPrimitiveComponent* OverlappedComponent,
 	AActor* OtherActor,
@@ -62,6 +62,7 @@ void AStaticProjectile::OnBeginOverlap(
 		if (Character)
 		{
 			Character->AddAmmo(AmmoCount);
+			
 			Destroy();
 		}
 	}

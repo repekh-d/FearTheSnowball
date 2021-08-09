@@ -6,6 +6,21 @@
 #include "GameFramework/Actor.h"
 #include "StaticProjectile.generated.h"
 
+USTRUCT(BlueprintType)
+struct FPickedUpEventInfo
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	class AFPSCharacter* Player;
+
+	UPROPERTY()
+	int32 Count;
+
+	UPROPERTY()
+	TSubclassOf<class AStaticProjectile> ProjectileClass;
+};
+
 UCLASS()
 class FEARTHESNOWBALL_API AStaticProjectile : public AActor
 {

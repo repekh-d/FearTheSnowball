@@ -23,6 +23,8 @@ void AFPSController::SetupInputComponent()
 void AFPSController::BeginPlay()
 {
     ControlledCharacter = Cast<AFPSCharacter>(GetCharacter());
+
+    Super::BeginPlay();
 }
 
 void AFPSController::OnFire()

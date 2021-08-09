@@ -14,7 +14,7 @@ class FEARTHESNOWBALL_API AFPSController : public APlayerController
 {
 	GENERATED_BODY()
 	
-	UPROPERTY()
+	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	class AFPSCharacter* ControlledCharacter;
 
 protected:

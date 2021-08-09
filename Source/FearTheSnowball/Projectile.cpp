@@ -69,7 +69,10 @@ void AProjectile::OnHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimi
 		Character = Cast<AFPSCharacter>(OtherActor);
 		if (Character)
 		{
-			Character->LaunchCharacter(GetVelocity(), false, false);
+			FVector Velocity = GetVelocity();
+			Velocity.Z = 0.f;
+			Character->LaunchCharacter(Velocity, false, false);
+			Character->SetLastHitBy(Cast<AFPSCharacter>(this->GetInstigator()));
 			Destroy();
 		}
 	}

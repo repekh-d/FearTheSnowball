@@ -6,6 +6,25 @@
 #include "GameFramework/Character.h"
 #include "FPSCharacter.generated.h"
 
+class UBattleLogEntryInfo;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCustomDelegate, int32, AmmoCount);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerDiedDelegate, UBattleLogEntryInfo*, Info);
+
+
+USTRUCT(BlueprintType)
+struct FLastHit
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	class AFPSCharacter* Player;
+
+	UPROPERTY()
+	float Time;
+};
+
+
 UCLASS()
 class FEARTHESNOWBALL_API AFPSCharacter : public ACharacter
 {
@@ -19,17 +38,32 @@ class FEARTHESNOWBALL_API AFPSCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AProjectile> ProjectileClass;
 
+	// Class of log message
+	UPROPERTY(EditDefaultsOnly, Category = UI)
+	TSubclassOf<class UBattleLogEntryInfo> LogMessageClass;
+
 protected:
 	// Amount of posessed ammo
 	UPROPERTY(ReplicatedUsing = OnRep_AmmoCount)
 	int32 AmmoCount;
 
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
+	// Information about last collision with projectile
+	UPROPERTY(Replicated)
+	FLastHit LastHit;
+
+	// Is player still alive?
+	UPROPERTY(ReplicatedUsing = OnRep_IsAlive)
+	bool IsAlive;
+
+	virtual void Tick(float DeltaTime) override;
 
 	// AmmoCount replication callback
 	UFUNCTION()
 	void OnRep_AmmoCount();
+
+	// IsAlive replication callback
+	UFUNCTION()
+	void OnRep_IsAlive();
 
 public:
 	// Sets default values for this character's properties
@@ -53,6 +87,10 @@ public:
 	// Vertical rotation
 	void LookUp(float Val);
 
+	// AmmoCount getter
+	UFUNCTION(BlueprintCallable)
+	int32 GetAmmoCount();
+
 	// AmmoCount setter
 	UFUNCTION(BlueprintCallable)
 	void SetAmmoCount(int32 NewAmmoCount);
@@ -60,4 +98,19 @@ public:
 	// AmmoCount setter
 	UFUNCTION(BlueprintCallable)
 	void AddAmmo(int32 Count);
+
+	// Set instiator of the last hit
+	UFUNCTION(BlueprintCallable)
+	void SetLastHitBy(AFPSCharacter* Player);
+
+	// Set life status of the player
+	UFUNCTION(BlueprintCallable)
+	void SetIsAlive(bool NewAliveStatus);
+
+	// Event - fires on the change of ammo amount
+	UPROPERTY(BlueprintAssignable, Category = "FPSCharacter")
+	FCustomDelegate OnAmmoCountChanged;
+
+	UPROPERTY(BlueprintAssignable, Category = "FPSCharacter")
+	FOnPlayerDiedDelegate OnPlayerDied;
 };

@@ -4,7 +4,10 @@
 #include "FPSCharacter.h"
 #include "Projectile.h"
 #include "Components/CapsuleComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "FPSPlayerState.h"
+#include "BattleLogEntryInfo.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -13,7 +16,12 @@ AFPSCharacter::AFPSCharacter()
 	ProjectileSpawn->SetupAttachment(RootComponent);
 	ProjectileSpawn->SetRelativeLocation(FVector(120.f, 0.f, 50.f));
 
+	LogMessageClass = UBattleLogEntryInfo::StaticClass();
+
 	AmmoCount = 5;
+	LastHit.Player = nullptr;
+	LastHit.Time = 0.f;
+	IsAlive = true;
 }
 
 void AFPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -21,13 +29,22 @@ void AFPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AFPSCharacter, AmmoCount);
+	DOREPLIFETIME(AFPSCharacter, LastHit);
+	DOREPLIFETIME(AFPSCharacter, IsAlive);
 }
 
-// Called when the game starts or when spawned
-void AFPSCharacter::BeginPlay()
+void AFPSCharacter::Tick(float DeltaTime)
 {
-	Super::BeginPlay();
-	
+	Super::Tick(DeltaTime);
+
+	if (GetActorLocation().Z < 0.f)
+	{
+		if (GetLocalRole() == ROLE_Authority)
+		{
+			SetIsAlive(false);
+			OnRep_IsAlive();
+		}
+	}
 }
 
 void AFPSCharacter::MoveForward(float Val)
@@ -72,7 +89,15 @@ void AFPSCharacter::LookUp(float Val)
 
 void AFPSCharacter::OnRep_AmmoCount()
 {
+	if (GetLocalRole() != ROLE_Authority)
+	{
+		OnAmmoCountChanged.Broadcast(AmmoCount);
+	}
+}
 
+int32 AFPSCharacter::GetAmmoCount()
+{
+	return AmmoCount;
 }
 
 void AFPSCharacter::SetAmmoCount(int32 NewAmmoCount)
@@ -87,4 +112,50 @@ void AFPSCharacter::SetAmmoCount(int32 NewAmmoCount)
 void AFPSCharacter::AddAmmo(int32 Count)
 {
 	SetAmmoCount(Count + AmmoCount);
+}
+
+void AFPSCharacter::SetLastHitBy(AFPSCharacter* Player)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		LastHit.Player = Player;
+		LastHit.Time = GetWorld()->GetTimeSeconds();
+	}
+}
+
+void AFPSCharacter::OnRep_IsAlive()
+{
+	if (GetLocalRole() != ROLE_Authority)
+	{
+		if (!IsAlive)
+		{
+			UBattleLogEntryInfo* info = NewObject<UBattleLogEntryInfo>(this, LogMessageClass);
+			info->Entry1 = GetName();
+			if (GetWorld()->GetTimeSeconds() - LastHit.Time < 2.f && LastHit.Player)
+			{
+				// Killed by other player
+				info->ActionType = EActionType::Kill;
+				info->Entry2 = LastHit.Player->GetName();
+			}
+			else
+			{
+				// Killed by natural cause
+				info->ActionType = EActionType::Death;
+			}
+			info->TimeToLive = 5.0;
+			OnPlayerDied.Broadcast(info);
+			AFPSPlayerState* GameState = GetPlayerState<AFPSPlayerState>();
+			GameState->PassCharacterEvent(info);
+		}
+	}
+}
+
+void AFPSCharacter::SetIsAlive(bool NewAliveStatus)
+{
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		IsAlive = NewAliveStatus;
+		//GetCharacterMovement()->StopMovementImmediately();
+		OnRep_IsAlive();
+	}
 }
