@@ -10,8 +10,21 @@
 
 class AFPSController;
 
+USTRUCT(BlueprintType)
+struct FDeathEventData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(BlueprintReadWrite)
+	class AFPSPlayerState* Killed;
+
+	UPROPERTY(BlueprintReadWrite)
+	class AFPSPlayerState* KilledBy;
+};
+
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerJoinedDelegate, AFPSPlayerState*, PlayerState);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerDiedDelegate3, FDeathEventData, DeathEventData);
 
 
 /**
@@ -36,7 +49,7 @@ protected:
 	void virtual BeginPlay() override;
 
 	UFUNCTION()
-	void OnRep_PlayerStates();
+	void OnRep_PlayerStates(const TArray<class AFPSPlayerState*>& Previous);
 
 public:
 	ABattleRoyaleGameState();
@@ -49,4 +62,10 @@ public:
 
 	UFUNCTION()
 	void AddPlayer(AFPSPlayerState* NewPlayer);
+
+	UPROPERTY(BlueprintAssignable, Category = "BattleRoyalGameState")
+	FOnPlayerDiedDelegate3 OnPlayerDied;
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_AnnounceDeath(FDeathEventData Data);
 };

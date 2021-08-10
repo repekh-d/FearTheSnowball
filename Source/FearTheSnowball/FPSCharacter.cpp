@@ -7,7 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "FPSPlayerState.h"
-#include "BattleLogEntryInfo.h"
+#include "BattleRoyaleGameState.h"
 
 // Sets default values
 AFPSCharacter::AFPSCharacter()
@@ -15,8 +15,6 @@ AFPSCharacter::AFPSCharacter()
 	ProjectileSpawn = CreateDefaultSubobject<USceneComponent>(TEXT("ProjectileSpawn"));
 	ProjectileSpawn->SetupAttachment(RootComponent);
 	ProjectileSpawn->SetRelativeLocation(FVector(120.f, 0.f, 50.f));
-
-	LogMessageClass = UBattleLogEntryInfo::StaticClass();
 
 	AmmoCount = 5;
 	LastHit.Player = nullptr;
@@ -29,20 +27,33 @@ void AFPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AFPSCharacter, AmmoCount);
-	DOREPLIFETIME(AFPSCharacter, LastHit);
-	DOREPLIFETIME(AFPSCharacter, IsAlive);
 }
 
 void AFPSCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	if (GetActorLocation().Z < 0.f)
+	if (GetActorLocation().Z < 0.f && IsAlive)
 	{
 		if (GetLocalRole() == ROLE_Authority)
 		{
-			SetIsAlive(false);
-			OnRep_IsAlive();
+			ABattleRoyaleGameState* GameState = GetWorld()->GetGameState<ABattleRoyaleGameState>();
+			if (GameState)
+			{
+				FDeathEventData Data;
+				Data.Killed = GetPlayerState<AFPSPlayerState>();
+				if (GetWorld()->GetTimeSeconds() - LastHit.Time < 2.f && LastHit.Player)
+				{
+					// Killed by other player
+					Data.KilledBy = LastHit.Player->GetPlayerState<AFPSPlayerState>();
+				}
+				else
+				{
+					// Killed by natural cause
+					Data.KilledBy = nullptr;
+				}
+				GameState->Multicast_AnnounceDeath(Data);
+				IsAlive = false;
+			}
 		}
 	}
 }
@@ -120,42 +131,5 @@ void AFPSCharacter::SetLastHitBy(AFPSCharacter* Player)
 	{
 		LastHit.Player = Player;
 		LastHit.Time = GetWorld()->GetTimeSeconds();
-	}
-}
-
-void AFPSCharacter::OnRep_IsAlive()
-{
-	if (GetLocalRole() != ROLE_Authority)
-	{
-		if (!IsAlive)
-		{
-			UBattleLogEntryInfo* info = NewObject<UBattleLogEntryInfo>(this, LogMessageClass);
-			info->Entry1 = GetName();
-			if (GetWorld()->GetTimeSeconds() - LastHit.Time < 2.f && LastHit.Player)
-			{
-				// Killed by other player
-				info->ActionType = EActionType::Kill;
-				info->Entry2 = LastHit.Player->GetName();
-			}
-			else
-			{
-				// Killed by natural cause
-				info->ActionType = EActionType::Death;
-			}
-			info->TimeToLive = 5.0;
-			OnPlayerDied.Broadcast(info);
-			AFPSPlayerState* GameState = GetPlayerState<AFPSPlayerState>();
-			GameState->PassCharacterEvent(info);
-		}
-	}
-}
-
-void AFPSCharacter::SetIsAlive(bool NewAliveStatus)
-{
-	if (GetLocalRole() == ROLE_Authority)
-	{
-		IsAlive = NewAliveStatus;
-		//GetCharacterMovement()->StopMovementImmediately();
-		OnRep_IsAlive();
 	}
 }

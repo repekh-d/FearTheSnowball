@@ -16,8 +16,3 @@ void AFPSPlayerState::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 }
-
-void AFPSPlayerState::PassCharacterEvent(UBattleLogEntryInfo* Entry)
-{
-	OnPlayerDied.Broadcast(Entry);
-}

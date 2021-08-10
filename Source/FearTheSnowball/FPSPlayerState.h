@@ -6,9 +6,6 @@
 #include "GameFramework/PlayerState.h"
 #include "FPSPlayerState.generated.h"
 
-class UBattleLogEntryInfo;
-
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerDiedDelegate2, UBattleLogEntryInfo*, Info);
 
 /**
  * 
@@ -25,9 +22,4 @@ public:
 	AFPSPlayerState();
 
 	void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	void PassCharacterEvent(UBattleLogEntryInfo* Entry);
-
-	UPROPERTY(BlueprintAssignable, Category = "FPSPlayerState")
-	FOnPlayerDiedDelegate2 OnPlayerDied;
 };

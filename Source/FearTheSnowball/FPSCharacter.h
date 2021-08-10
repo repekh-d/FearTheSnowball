@@ -6,10 +6,8 @@
 #include "GameFramework/Character.h"
 #include "FPSCharacter.generated.h"
 
-class UBattleLogEntryInfo;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCustomDelegate, int32, AmmoCount);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlayerDiedDelegate, UBattleLogEntryInfo*, Info);
 
 
 USTRUCT(BlueprintType)
@@ -38,21 +36,16 @@ class FEARTHESNOWBALL_API AFPSCharacter : public ACharacter
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)
 	TSubclassOf<class AProjectile> ProjectileClass;
 
-	// Class of log message
-	UPROPERTY(EditDefaultsOnly, Category = UI)
-	TSubclassOf<class UBattleLogEntryInfo> LogMessageClass;
-
 protected:
 	// Amount of posessed ammo
 	UPROPERTY(ReplicatedUsing = OnRep_AmmoCount)
 	int32 AmmoCount;
 
 	// Information about last collision with projectile
-	UPROPERTY(Replicated)
+	UPROPERTY()
 	FLastHit LastHit;
 
-	// Is player still alive?
-	UPROPERTY(ReplicatedUsing = OnRep_IsAlive)
+	UPROPERTY()
 	bool IsAlive;
 
 	virtual void Tick(float DeltaTime) override;
@@ -60,10 +53,6 @@ protected:
 	// AmmoCount replication callback
 	UFUNCTION()
 	void OnRep_AmmoCount();
-
-	// IsAlive replication callback
-	UFUNCTION()
-	void OnRep_IsAlive();
 
 public:
 	// Sets default values for this character's properties
@@ -103,14 +92,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetLastHitBy(AFPSCharacter* Player);
 
-	// Set life status of the player
-	UFUNCTION(BlueprintCallable)
-	void SetIsAlive(bool NewAliveStatus);
-
 	// Event - fires on the change of ammo amount
 	UPROPERTY(BlueprintAssignable, Category = "FPSCharacter")
 	FCustomDelegate OnAmmoCountChanged;
-
-	UPROPERTY(BlueprintAssignable, Category = "FPSCharacter")
-	FOnPlayerDiedDelegate OnPlayerDied;
 };

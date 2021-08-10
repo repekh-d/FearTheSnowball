@@ -34,20 +34,41 @@ void ABattleRoyaleGameState::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ABattleRoyaleGameState::OnRep_PlayerStates()
+void ABattleRoyaleGameState::OnRep_PlayerStates(const TArray<AFPSPlayerState *>& Previous)
 {
 	if (GetLocalRole() != ROLE_Authority)
 	{
-		OnPlayerJoined.Broadcast(PlayerStates.Top());
+		// Check for new items
+		for (int32 i = 0; i < PlayerStates.Num(); ++i)
+		{
+			if (i < Previous.Num())
+			{
+				if (PlayerStates[i] != Previous[i] && PlayerStates[i] != nullptr)
+				{
+					OnPlayerJoined.Broadcast(PlayerStates[i]);
+				}
+			}
+			else
+			{
+				if (PlayerStates[i] != nullptr)
+				{
+					OnPlayerJoined.Broadcast(PlayerStates.Top());
+				}
+			}
+		}
 	}
 }
-
 
 void ABattleRoyaleGameState::AddPlayer(AFPSPlayerState* NewPlayer)
 {
 	if (GetLocalRole() == ROLE_Authority)
 	{
 		PlayerStates.Add(NewPlayer);
-		OnRep_PlayerStates();
+		OnRep_PlayerStates(PlayerStates);
 	}
+}
+
+void ABattleRoyaleGameState::Multicast_AnnounceDeath_Implementation(FDeathEventData Data)
+{
+	OnPlayerDied.Broadcast(Data);
 }
