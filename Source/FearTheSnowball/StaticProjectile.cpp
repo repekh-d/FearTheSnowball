@@ -21,16 +21,15 @@ AStaticProjectile::AStaticProjectile()
 	RootComponent = CollisionComp;
 
 	// Use Static Mesh Component
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/Meshes/Sphere.Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/Meshes/Projectile.Projectile"));
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(RootComponent);
 	StaticMesh->BodyInstance.SetCollisionProfileName("NoCollision");
 
-	//Set the Static Mesh and its scale if we successfully found a mesh asset to use.
+	//Set the Static Mesh and if we successfully found a mesh asset to use.
 	if (DefaultMesh.Succeeded())
 	{
 		StaticMesh->SetStaticMesh(DefaultMesh.Object);
-		StaticMesh->SetRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
 	}
 
 	AmmoCount = 5;
@@ -56,7 +55,7 @@ void AStaticProjectile::OnBeginOverlap(
 	if (GetLocalRole() != ROLE_Authority)
 		return;
 
-	if ((OtherActor != nullptr) && (OtherActor != this) && (OtherComp != nullptr))
+	if (OtherActor != nullptr)
 	{
 		AFPSCharacter* Character = Cast<AFPSCharacter>(OtherActor);
 		if (Character)

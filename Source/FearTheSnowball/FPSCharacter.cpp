@@ -19,7 +19,11 @@ AFPSCharacter::AFPSCharacter()
 	AmmoCount = 5;
 	LastHit.Player = nullptr;
 	LastHit.Time = 0.f;
-	IsAlive = true;
+	bIsAlive = true;
+
+	constexpr float NetCullDistance = 1000;
+	NetCullDistanceSquared = NetCullDistance * NetCullDistance;
+	bAlwaysRelevant = false;
 }
 
 void AFPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -32,7 +36,7 @@ void AFPSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 void AFPSCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (GetActorLocation().Z < 0.f && IsAlive)
+	if (GetActorLocation().Z < 0.f && bIsAlive)
 	{
 		if (GetLocalRole() == ROLE_Authority)
 		{
@@ -41,18 +45,9 @@ void AFPSCharacter::Tick(float DeltaTime)
 			{
 				FDeathEventData Data;
 				Data.Killed = GetPlayerState<AFPSPlayerState>();
-				if (GetWorld()->GetTimeSeconds() - LastHit.Time < 2.f && LastHit.Player)
-				{
-					// Killed by other player
-					Data.KilledBy = LastHit.Player->GetPlayerState<AFPSPlayerState>();
-				}
-				else
-				{
-					// Killed by natural cause
-					Data.KilledBy = nullptr;
-				}
+				Data.KilledBy = GetKiller();
 				GameState->Multicast_AnnounceDeath(Data);
-				IsAlive = false;
+				bIsAlive = false;
 			}
 		}
 	}
@@ -85,7 +80,7 @@ void AFPSCharacter::Fire_Implementation()
 
 	// spawn the projectile at the muzzle
 	GetWorld()->SpawnActor<AProjectile>(ProjectileClass, SpawnLocation, SpawnRotation, ActorSpawnParams);
-	AddAmmo(-1);
+	SetAmmoCount(AmmoCount - 1);
 }
 
 void AFPSCharacter::Turn(float Val)
@@ -132,4 +127,15 @@ void AFPSCharacter::SetLastHitBy(AFPSCharacter* Player)
 		LastHit.Player = Player;
 		LastHit.Time = GetWorld()->GetTimeSeconds();
 	}
+}
+
+AFPSPlayerState* AFPSCharacter::GetKiller() const
+{
+	if (GetWorld()->GetTimeSeconds() - LastHit.Time < 2.f && LastHit.Player)
+	{
+		// Killed by other player
+		return LastHit.Player->GetPlayerState<AFPSPlayerState>();
+	}
+	// Killed by natural cause
+	return nullptr;
 }

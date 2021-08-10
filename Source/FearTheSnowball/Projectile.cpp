@@ -25,16 +25,15 @@ AProjectile::AProjectile()
 	RootComponent = CollisionComp;
 
 	// Use Static Mesh Component
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/Meshes/Sphere.Sphere"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> DefaultMesh(TEXT("/Game/Meshes/Projectile.Projectile"));
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	StaticMesh->SetupAttachment(RootComponent);
 	StaticMesh->BodyInstance.SetCollisionProfileName("NoCollision");
 
-	//Set the Static Mesh and its scale if we successfully found a mesh asset to use.
+	//Set the Static Mesh if we successfully found a mesh asset to use.
 	if (DefaultMesh.Succeeded())
 	{
 		StaticMesh->SetStaticMesh(DefaultMesh.Object);
-		StaticMesh->SetRelativeScale3D(FVector(0.1f, 0.1f, 0.1f));
 	}
 
 	// Use a ProjectileMovementComponent to govern this projectile's movement

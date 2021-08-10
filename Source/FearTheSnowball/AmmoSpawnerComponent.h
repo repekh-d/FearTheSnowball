@@ -7,7 +7,7 @@
 #include "AmmoSpawnerComponent.generated.h"
 
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(Blueprintable)
 class FEARTHESNOWBALL_API UAmmoSpawnerComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -37,10 +37,10 @@ public:
 	void SpawnAmmo();
 
 	// Start spawning timer
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void StartSpawningAmmo();
 
 	// Stop spawning timer
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 	void StopSpawningAmmo();
 };

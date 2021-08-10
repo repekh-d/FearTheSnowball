@@ -46,13 +46,15 @@ protected:
 	FLastHit LastHit;
 
 	UPROPERTY()
-	bool IsAlive;
+	bool bIsAlive;
 
 	virtual void Tick(float DeltaTime) override;
 
 	// AmmoCount replication callback
 	UFUNCTION()
 	void OnRep_AmmoCount();
+
+	class AFPSPlayerState* GetKiller() const;
 
 public:
 	// Sets default values for this character's properties
